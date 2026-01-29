@@ -58,6 +58,16 @@ def _parse_value(tok: str) -> Any:
 
 
 def parse_sql(sql: str) -> Statement:
+
+    # Ignore les lignes vides et les commentaires SQL (-- ...)
+    sql_clean = []
+    for line in sql.splitlines():
+        l = line.strip()
+        if not l or l.startswith('--'):
+            continue
+        sql_clean.append(line)
+    sql = '\n'.join(sql_clean)
+
     toks = _tok(sql)
     if not toks:
         raise ValueError("empty statement")
@@ -350,13 +360,13 @@ def parse_sql(sql: str) -> Statement:
                     aggregates.append(Aggregate(func="MAX", arg=m.group(1)))
                     new_cols.append(c)
                 elif cu.startswith("AVG"):
-                    m = re.fullmatch(r"AVG\(([A-Za-z0-9_\.]+)\)", c, flags=re.IGNORECASE)
+                    m = re.fullmatch(r"AVG\s*\(\s*([A-Za-z0-9_\.]+)\s*\)", c, flags=re.IGNORECASE)
                     if not m:
                         raise ValueError("expected AVG(col)")
                     aggregates.append(Aggregate(func="AVG", arg=m.group(1)))
                     new_cols.append(c)
                 elif cu.startswith("SUM"):
-                    m = re.fullmatch(r"SUM\(([A-Za-z0-9_\.]+)\)", c, flags=re.IGNORECASE)
+                    m = re.fullmatch(r"SUM\s*\(\s*([A-Za-z0-9_\.]+)\s*\)", c, flags=re.IGNORECASE)
                     if not m:
                         raise ValueError("expected SUM(col)")
                     aggregates.append(Aggregate(func="SUM", arg=m.group(1)))
